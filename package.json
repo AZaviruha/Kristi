@@ -1,0 +1,46 @@
+{
+  "name": "kristi",
+  "version": "0.1.0",
+  "description": "Simple FSM engine",
+  "main": "build/Kristi.js",
+  "scripts": {
+    "install": "gulp build",
+    "test": "mocha test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/azaviruha/kristi.git"
+  },
+  "keywords": [
+    "fsm"
+  ],
+  "author": "a.zaviruha <a.zaviruha@gmail.com>",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/azaviruha/kristi#readme",
+  "dependencies": {
+    "microevent": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.4.5",
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-stage-0": "^6.3.13",
+    "babelify": "^7.2.0",
+    "browserify": "^13.0.0",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.1",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.3",
+    "gulp-umd": "^0.2.0",
+    "gulp-util": "^3.0.7",
+    "literate-programming-lib": "^1.9.0",
+    "literify": "^0.1.0",
+    "litpro": "^0.12.1",
+    "mocha": "^2.4.5",
+    "rimraf": "^2.5.0",
+    "through2": "^2.0.1",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
