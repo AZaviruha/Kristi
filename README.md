@@ -14,7 +14,7 @@ Kristi is inspired by [Machina.js](https://github.com/ifandelse/machina.js) libr
 
 Kristi supports [UMD](https://github.com/umdjs/umd) pattern.
 
-Users of npm can install use `npm install kristi`. And with babelify it's possible to use ES6 `import` syntax.
+Users of npm can use `npm install kristi`. And with babelify it's possible to use ES6 `import` syntax.
 
 ### FSM Construction
 
@@ -25,7 +25,7 @@ let fsm = new Automaton({
 	'login-screen-is-shown': {
 		transitions: {
 			'user-authenticated'           : 'todo-screen-is-shown',
-			'password-recovery-requested'  : 'password-recovery-screen-is-show',
+			'password-recovery-requested'  : 'password-recovery-screen-is-shown',
 		},
 		enter() {
 			let fsm = this; // Automaton instance is set as `this` in `enter` and `exit`;
@@ -45,7 +45,7 @@ let fsm = new Automaton({
 		}
 	},
 
-	'todo-form-is-show' : {
+	'todo-screen-is-shown' : {
 		...
 	},
 
