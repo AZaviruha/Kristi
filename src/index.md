@@ -8,12 +8,12 @@ Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows 
 
 ## Table of contents
 
-- [Structure](#markdown-header-structure)
-- [FSM Constructor](#markdown-header-fsm-constructor)
-    - [State-transition procedure](#markdown-header-state-transition-procedure)
-    - [Public API definition](#markdown-header-public-api-definition)
-- [Helpers](#markdown-header-helpers)
-    - [nextState()](#markdown-header-nextstate)
+- [Structure](#structure)
+- [FSM Constructor](#fsm-constructor)
+    - [State-transition procedure](#state-transition-procedure)
+    - [Public API definition](#public-api-definition)
+- [Helpers](#helpers)
+    - [nextState()](#nextstate)
 
 
 ## Structure
