@@ -92,4 +92,4 @@ The full API description could be found [here][api-url].
 [literate-url]: https://en.wikipedia.org/wiki/Literate_programming
 [fsm-url]: https://en.wikipedia.org/wiki/Finite-state_machine
 [automata-url]: https://en.wikipedia.org/wiki/Automata-based_programming
-[api-url]: https://bitbucket.org/azaviruha/kristi/src/master/src/index.md?at=master&fileviewer=file-view-default#markdown-header-public-api-definition
+[api-url]: https://github.com/AZaviruha/Kristi/blob/master/src/index.md#public-api-definition
