@@ -25,16 +25,8 @@ gulp.task('clear', function (next) {
 gulp.task('build', ['clear'], function () {
 	var src = join(PATH.src, 'index.md');
 
-	return bundle(src, 'Kristi', 'Kristi.js')
+	return bundle(src, 'Kristi', 'Kristi.min.js')
 		.pipe(uglify())
-		.pipe(gulp.dest(join(PATH.dest)));
-});
-
-
-gulp.task('test', ['build'], function () {
-	var src = join(PATH.src, 'index.md');
-
-	return bundle(src, 'Kristi', 'Kristi.js')
 		.pipe(gulp.dest(join(PATH.dest)));
 });
 
