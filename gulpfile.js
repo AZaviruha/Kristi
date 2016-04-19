@@ -7,6 +7,7 @@ var browserify = require('browserify');
 var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
 var uglify     = require('gulp-uglify');
+var rename     = require('gulp-rename');
 var literify   = require('literify');
 
 var production = process.argv.indexOf('--production') !== -1;
@@ -25,7 +26,9 @@ gulp.task('clear', function (next) {
 gulp.task('build', ['clear'], function () {
 	var src = join(PATH.src, 'index.md');
 
-	return bundle(src, 'Kristi', 'Kristi.min.js')
+	return bundle(src, 'Kristi', 'Kristi.js')
+		.pipe(gulp.dest(join(PATH.dest)))
+		.pipe(rename('Kristi.min.js'))
 		.pipe(uglify())
 		.pipe(gulp.dest(join(PATH.dest)));
 });

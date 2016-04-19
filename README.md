@@ -1,4 +1,5 @@
 [![Literate programming][literate-image]][literate-url]
+[![NPM version][npm-image]][npm-url]
 
 # Kristi
 
@@ -90,6 +91,8 @@ The full API description could be found [here][api-url].
 
 [literate-image]: https://img.shields.io/badge/literate%20programming--brightgreen.svg
 [literate-url]: https://en.wikipedia.org/wiki/Literate_programming
+[npm-image]: http://img.shields.io/badge/npm-v0.1.1-green.svg
+[npm-url]: https://www.npmjs.com/package/kristi
 [fsm-url]: https://en.wikipedia.org/wiki/Finite-state_machine
 [automata-url]: https://en.wikipedia.org/wiki/Automata-based_programming
 [api-url]: https://github.com/AZaviruha/Kristi/blob/master/src/index.md#public-api-definition
