@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/azaviruha/kristi.git"
+    "url": "git+ssh://git@github.com:AZaviruha/Kristi.git"
   },
   "keywords": [
     "fsm"
   ],
   "author": "a.zaviruha <a.zaviruha@gmail.com>",
-  "license": "ISC",
-  "homepage": "https://bitbucket.org/azaviruha/kristi#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/AZaviruha/Kristi",
   "dependencies": {
     "microevent": "^1.0.0"
   },

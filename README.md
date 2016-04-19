@@ -89,6 +89,11 @@ TODO: add full Event API description.
 
 The full API description could be found [here][api-url].
 
+## License
+
+[MIT-LICENSE](https://github.com/AZaviruha/Kristi/blob/master/LICENSE)
+
+
 [literate-image]: https://img.shields.io/badge/literate%20programming--brightgreen.svg
 [literate-url]: https://en.wikipedia.org/wiki/Literate_programming
 [npm-image]: http://img.shields.io/badge/npm-v0.1.1-green.svg
