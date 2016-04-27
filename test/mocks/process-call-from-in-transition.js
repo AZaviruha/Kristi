@@ -5,7 +5,11 @@ module.exports = {
 			e3 : 's3'
 		},
 		enter : function () {},
-		exit  : function () {}
+		exit  : function () {
+			return new Promise(function (resolve) {
+				setTimeout(function () { resolve(); }, 500);
+			});
+		}
 	},
 
 	s2: {
@@ -13,7 +17,11 @@ module.exports = {
 			e1 : 's1',
 			e3 : 's3'
 		},
-		enter : function () {},
+		enter : function () {
+			return new Promise(function (resolve) {
+				setTimeout(function () { resolve(); }, 500);
+			});
+		},
 		exit  : function () {}
 	},
 

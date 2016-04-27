@@ -54,7 +54,8 @@ let self         = this;
 let eventBus     = new MicroEvent();
 let isRunned     = false;
 let inTransition = false;
-let stateId, state;
+let simpleQueue  = null;
+let stateId, state, transition;
 ```
 
 
@@ -83,17 +84,27 @@ function transitState(automaton, newStateId, args=[]) {
 #### Check, if transition could be performed, and stop if it could not
 
 ```javascript
-const newState = newStateId && schema[newStateId];
+let newState = newStateId && schema[newStateId];
 
-if (inTransition || !newState) return;
+if (!newState) {
+    let error = new Error('Target state does not exist');
+
+    error.code = ERRORS.ESTATENOTEXISTS;
+    return Promise.reject(error);
+}
+
+
+if (inTransition) return transition;
 ```
 
 
 #### Start transition (async) process
 
+From this moment, previous transition deprecates, and we could start new transition.
+
 ```javascript
-inTransition   = true;
-let transition = Promise.resolve(true);
+inTransition = true;
+transition   = Promise.resolve(true);
 ```
 
 
@@ -116,15 +127,25 @@ if (typeof enter === 'function') {
 #### Do post-transition work (save new \`stateId\`, unlock \`inTransition\` flag etc)
 
 ```javascript
-return transition.then(() => {
+transition = transition.then(() => {
     let envelope = { from: stateId, to: newStateId };
     stateId      = newStateId;
     state        = newState
     inTransition = false;
 
     emit(EVENTS.TRANSITION, envelope);
-    return true;
+
+    if (simpleQueue) {
+        let result  = self.process.apply(self, simpleQueue);
+        simpleQueue = null;
+
+        return result;
+    } else {
+        return true;
+    }
 });
+
+return transition;
 ```
 
 ### Event emitting procedure
@@ -139,6 +160,15 @@ function emit(...args) {
 
 ### Public API definition
 
+    _"Automaton.startWith()"
+
+    _"Automaton.process()"
+
+    _"others"
+
+
+#### Automaton.startWith()
+
 ```javascript
 /**
  * @param {string} newStateId - id of start fsm state.
@@ -146,30 +176,58 @@ function emit(...args) {
  */
 this.startWith = function(newStateId) {
     if (isRunned) {
-        throw new Error('Automaton already runned');
+        let error = new Error('Automaton already runned');
+
+        error.code = ERRORS.EALREADYRUNNED;
+        throw error;
     }
 
     isRunned = true;
     return transitState(self, newStateId);
 };
+```
 
+#### Automaton.process()
 
+`Automaton.process()` provides processing of input event, that leads (or not) to state transition.
+State transition will be refused, is `Automaton` instance is not runned at the moment of `.process()`.
+
+```javascript
 /**
  * @param {string} eventId - id of event to process in current state.
  * @returns {Promise}
  */
 this.process = function(eventId, ...args) {
     if (!isRunned) {
-        throw new Error('Automaton is not runned');
+        let error = new Error('Automaton is not runned');
+
+        error.code = ERRORS.ENOTRUNNED;
+        throw error;
+    }
+
+    if (inTransition) {
+        simpleQueue = [[eventId].concat(args)];
     }
 
     let envelope = { state: stateId, event: eventId };
     emit(EVENTS.PROCESSING, envelope);
 
+    let nextStateInfo = nextState(schema, stateId, eventId);
+
+    if (!nextStateInfo) {
+        let error = new Error(`Input ${eventId} will not be processed in the next state`);
+
+        error.code = ERRORS.EWILLNOTPROCESSED;
+        throw error;
+    }
+
     return transitState(self, nextState(schema, stateId, eventId), args);
 };
+```
 
+#### others
 
+```javascript
 /**
  * @returns {string}
  */
@@ -240,6 +298,13 @@ import MicroEvent from 'microevent';
 export const EVENTS = {
     TRANSITION : 'transition',
     PROCESSING : 'processing'
+};
+
+export const ERRORS = {
+    ENOTRUNNED        : 'enotrunned',
+    EALREADYRUNNED    : 'ealreadyrunned',
+    EWILLNOTPROCESSED : 'ewillnotprocessed',
+    ESTATENOTEXISTS   : 'estatenotexists'
 };
 ```
 

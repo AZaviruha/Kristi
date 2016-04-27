@@ -13,14 +13,14 @@ Kristi is inspired by [Machina.js](https://github.com/ifandelse/machina.js) libr
 
 ### Import
 
-Kristi supports [UMD](https://github.com/umdjs/umd) pattern.
+Users of npm can use `npm install kristi`.
+In other case, use `gulp build-min` to get minified UMD-compatible build.
 
-Users of npm can use `npm install kristi`. And with babelify it's possible to use ES6 `import` syntax.
 
 ### FSM Construction
 
 ```javascript
-import {Automaton, EVENTS} from 'kristi';
+import { Automaton, EVENTS } from 'kristi';
 
 let fsm = new Automaton({
 	'login-screen-is-shown': {

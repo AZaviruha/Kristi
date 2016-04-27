@@ -4,6 +4,7 @@
   "description": "Simple FSM engine",
   "main": "build/Kristi.js",
   "scripts": {
+    "prepublish": "gulp build-commonjs",
     "test": "mocha test/"
   },
   "repository": {
@@ -29,6 +30,7 @@
     "chai-as-promised": "^5.3.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.1",
+    "gulp-literate2": "^0.1.0",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-uglify": "^1.5.3",

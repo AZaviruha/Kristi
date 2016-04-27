@@ -5,8 +5,11 @@ var Kristi     = require('../');
 var Automaton  = Kristi.Automaton;
 var nextState  = Kristi.nextState;
 var EVENTS     = Kristi.EVENTS;
+var ERRORS     = Kristi.ERRORS;
 
 describe('Kristi', function() {
+	this.timeout(3000);
+
 	describe('Helpers', function () {
 		describe('nextState()', function () {
 			var schema = require('./mocks/base-fsm');
@@ -114,6 +117,52 @@ describe('Kristi', function() {
 					return fsm.process('e3');
 				})
 				.catch(done);
+			});
+
+
+			it('should allow to queue event processing, from "in-transition" state', function (done) {
+				var time1, time2;
+
+				schema = require('./mocks/process-call-from-in-transition');
+				fsm    = new Automaton(schema);
+
+				fsm.on(EVENTS.TRANSITION, function (transition) {
+					if ((transition.from === 's1') && (transition.to === 's2')) {
+						time1 = Date.now();
+					}
+
+					if ((transition.from === 's2') && (transition.to === 's3')) {
+						time2 = Date.now();
+						expect(time1).to.be.most(time2);
+						done();
+					}
+				});
+
+				fsm
+					.startWith('s1')
+					.then(function () {
+						fsm.process('e2');
+						fsm.process('e3');
+					})
+					.catch(done);
+			});
+
+
+			it('should apply queued event, to the new ("result-of-current-transition") state', function (done) {
+				schema = require('./mocks/process-call-from-in-transition');
+				fsm    = new Automaton(schema);
+
+				return fsm
+					.startWith('s1')
+					.then(function () {
+						fsm.process('e2');
+						return fsm.process('e2');
+					})
+					.catch(function (err) {
+						expect(err.code).to.equal(ERRORS.EWILLNOTPROCESSED);
+						expect(fsm.currentState()).to.equal('s2');
+						done();
+					});
 			});
 		});
 
