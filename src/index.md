@@ -84,13 +84,15 @@ function transitState(automaton, newStateId, args=[]) {
 #### Check, if transition could be performed, and stop if it could not
 
 ```javascript
-const newState = newStateId && schema[newStateId];
+let newState = newStateId && schema[newStateId];
 
 if (!newState) {
     let error = new Error('Target state does not exist');
 
+    error.code = ERRORS.ESTATENOTEXISTS;
     return Promise.reject(error);
 }
+
 
 if (inTransition) return transition;
 ```
@@ -125,7 +127,7 @@ if (typeof enter === 'function') {
 #### Do post-transition work (save new \`stateId\`, unlock \`inTransition\` flag etc)
 
 ```javascript
-return transition.then(() => {
+transition = transition.then(() => {
     let envelope = { from: stateId, to: newStateId };
     stateId      = newStateId;
     state        = newState
@@ -142,6 +144,8 @@ return transition.then(() => {
         return true;
     }
 });
+
+return transition;
 ```
 
 ### Event emitting procedure
@@ -172,7 +176,10 @@ function emit(...args) {
  */
 this.startWith = function(newStateId) {
     if (isRunned) {
-        throw new Error('Automaton already runned');
+        let error = new Error('Automaton already runned');
+
+        error.code = ERRORS.EALREADYRUNNED;
+        throw error;
     }
 
     isRunned = true;
@@ -192,7 +199,10 @@ State transition will be refused, is `Automaton` instance is not runned at the m
  */
 this.process = function(eventId, ...args) {
     if (!isRunned) {
-        throw new Error('Automaton is not runned');
+        let error = new Error('Automaton is not runned');
+
+        error.code = ERRORS.ENOTRUNNED;
+        throw error;
     }
 
     if (inTransition) {
@@ -201,6 +211,15 @@ this.process = function(eventId, ...args) {
 
     let envelope = { state: stateId, event: eventId };
     emit(EVENTS.PROCESSING, envelope);
+
+    let nextStateInfo = nextState(schema, stateId, eventId);
+
+    if (!nextStateInfo) {
+        let error = new Error(`Input ${eventId} will not be processed in the next state`);
+
+        error.code = ERRORS.EWILLNOTPROCESSED;
+        throw error;
+    }
 
     return transitState(self, nextState(schema, stateId, eventId), args);
 };
@@ -279,6 +298,13 @@ import MicroEvent from 'microevent';
 export const EVENTS = {
     TRANSITION : 'transition',
     PROCESSING : 'processing'
+};
+
+export const ERRORS = {
+    ENOTRUNNED        : 'enotrunned',
+    EALREADYRUNNED    : 'ealreadyrunned',
+    EWILLNOTPROCESSED : 'ewillnotprocessed',
+    ESTATENOTEXISTS   : 'estatenotexists'
 };
 ```
 
