@@ -2,15 +2,12 @@ var gulp       = require('gulp');
 var join       = require('path').join;
 var rimraf     = require('rimraf');
 var babel      = require('gulp-babel');
-var sourcemaps = require('gulp-sourcemaps');
 var browserify = require('browserify');
 var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
 var uglify     = require('gulp-uglify');
 var rename     = require('gulp-rename');
-var literify   = require('literify');
-
-var production = process.argv.indexOf('--production') !== -1;
+var literate   = require('gulp-literate2');
 
 var PATH = {
 	src  : 'src/',
@@ -23,46 +20,47 @@ gulp.task('clear', function (next) {
 });
 
 
-gulp.task('build', ['clear'], function () {
-	var src = join(PATH.src, 'index.md');
+gulp.task('build-min', ['build-commonjs'], function () {
+	var src = join(PATH.dest, 'Kristi.js');
 
-	return bundle(src, 'Kristi', 'Kristi.js')
-		.pipe(gulp.dest(join(PATH.dest)))
-		.pipe(rename('Kristi.min.js'))
-		.pipe(uglify())
-		.pipe(gulp.dest(join(PATH.dest)));
-});
-
-
-function bundle(src, globalName, fileName) {
 	return browserify(src, {
 			debug: true,
-			extensions: ['.js', '.json', '.md'],
-			standalone: globalName
+			standalone: 'Kristi'
 		})
-		.transform(literify)
 		.transform('babelify', {
-			extensions: ['.js', '.json', '.md'],
 			presets: ['es2015', 'stage-0'],
 			plugins: ['transform-es2015-modules-commonjs']
 		})
 		.bundle()
 		.on('error', function(err) {
-			console.log('----------------------------------');
 			console.error(err);
-			console.log('----------------------------------');
-
 			this.emit('end');
 		})
-		.pipe(source(fileName))
-		.pipe(buffer());
-}
+		.pipe(source('Kristi.min.js'))
+		.pipe(buffer())
+		.pipe(uglify())
+		.pipe(gulp.dest(join(PATH.dest)));
+});
+
+
+gulp.task('build-commonjs', ['clear'], function () {
+	var src = join(PATH.src, 'index.md');
+
+	return gulp.src(src)
+		.pipe(literate())
+		.pipe(babel({
+			presets: ['es2015', 'stage-0'],
+			plugins: ['transform-es2015-modules-commonjs']
+		}))
+		.pipe(rename('Kristi.js'))
+		.pipe(gulp.dest(PATH.dest));
+});
 
 
 //==================================================================//
 
-gulp.task('watch', ['build'], function() {
+gulp.task('watch', ['build-min'], function() {
 	gulp.watch(join(PATH.src, '**/*.md'),   ['build']);
 });
 
-gulp.task('default', ['build']);
+gulp.task('default', ['build-min']);
