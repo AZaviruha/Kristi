@@ -54,7 +54,8 @@ let self         = this;
 let eventBus     = new MicroEvent();
 let isRunned     = false;
 let inTransition = false;
-let stateId, state;
+let simpleQueue  = null;
+let stateId, state, transition;
 ```
 
 
@@ -85,15 +86,23 @@ function transitState(automaton, newStateId, args=[]) {
 ```javascript
 const newState = newStateId && schema[newStateId];
 
-if (inTransition || !newState) return;
+if (!newState) {
+    let error = new Error('Target state does not exist');
+
+    return Promise.reject(error);
+}
+
+if (inTransition) return transition;
 ```
 
 
 #### Start transition (async) process
 
+From this moment, previous transition deprecates, and we could start new transition.
+
 ```javascript
-inTransition   = true;
-let transition = Promise.resolve(true);
+inTransition = true;
+transition   = Promise.resolve(true);
 ```
 
 
@@ -123,7 +132,15 @@ return transition.then(() => {
     inTransition = false;
 
     emit(EVENTS.TRANSITION, envelope);
-    return true;
+
+    if (simpleQueue) {
+        let result  = self.process.apply(self, simpleQueue);
+        simpleQueue = null;
+
+        return result;
+    } else {
+        return true;
+    }
 });
 ```
 
@@ -139,6 +156,15 @@ function emit(...args) {
 
 ### Public API definition
 
+    _"Automaton.startWith()"
+
+    _"Automaton.process()"
+
+    _"others"
+
+
+#### Automaton.startWith()
+
 ```javascript
 /**
  * @param {string} newStateId - id of start fsm state.
@@ -152,8 +178,14 @@ this.startWith = function(newStateId) {
     isRunned = true;
     return transitState(self, newStateId);
 };
+```
 
+#### Automaton.process()
 
+`Automaton.process()` provides processing of input event, that leads (or not) to state transition.
+State transition will be refused, is `Automaton` instance is not runned at the moment of `.process()`.
+
+```javascript
 /**
  * @param {string} eventId - id of event to process in current state.
  * @returns {Promise}
@@ -163,13 +195,20 @@ this.process = function(eventId, ...args) {
         throw new Error('Automaton is not runned');
     }
 
+    if (inTransition) {
+        simpleQueue = [[eventId].concat(args)];
+    }
+
     let envelope = { state: stateId, event: eventId };
     emit(EVENTS.PROCESSING, envelope);
 
     return transitState(self, nextState(schema, stateId, eventId), args);
 };
+```
 
+#### others
 
+```javascript
 /**
  * @returns {string}
  */
