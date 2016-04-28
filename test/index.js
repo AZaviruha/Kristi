@@ -168,7 +168,7 @@ describe('Kristi', function() {
 				});
 			});
 
-			it('should apply queued event, to the new ("result-of-current-transition") state - error', function (done) {
+			it('should apply queued event, to the new ("result-of-current-transition") state: error case', function (done) {
 				schema = require('./mocks/process-call-from-in-transition');
 				fsm    = new Automaton(schema);
 
@@ -198,7 +198,7 @@ describe('Kristi', function() {
 				});
 			});
 
-			it('should apply queued event, to the new ("result-of-current-transition") state - success', function (done) {
+			it('should apply queued event, to the new ("result-of-current-transition") state: success case', function (done) {
 				schema = require('./mocks/process-call-from-in-transition');
 				fsm    = new Automaton(schema);
 
