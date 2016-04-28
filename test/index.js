@@ -51,8 +51,8 @@ describe('Kristi', function() {
 				expect(fsm.startWith).to.be.a('function');
 			});
 
-			it('should return object with `.process` method', function () {
-				expect(fsm.process).to.be.a('function');
+			it('should return object with `.processEvent` method', function () {
+				expect(fsm.processEvent).to.be.a('function');
 			});
 
 			it('should return object with `.on` method', function () {
@@ -61,6 +61,14 @@ describe('Kristi', function() {
 
 			it('should return object with `.off` method', function () {
 				expect(fsm.off).to.be.a('function');
+			});
+
+			it('should return object with `.currentState` method', function () {
+				expect(fsm.currentState).to.be.a('function');
+			});
+
+			it('should return object with `.currentTransition` method', function () {
+				expect(fsm.currentTransition).to.be.a('function');
 			});
 		});
 
@@ -88,20 +96,21 @@ describe('Kristi', function() {
 		describe('#process()', function () {
 			it('should return Promise', function () {
 				return fsm.startWith('s1').then(function () {
-					expect(fsm.process('e2').then).to.be.a('function');
+					expect(fsm.processEvent('e2').then).to.be.a('function');
 				});
 			});
 
-			it('should throw exception if fsm is not runned', function () {
-				function fn() { fsm.process('e2'); }
-
-				expect(fn).to.throw('Automaton is not runned');
+			it('should return rejected Promise if fsm is not runned', function () {
+				return fsm
+					.processEvent('e2')
+					.catch(function (err) {
+						expect(err.code).to.equal(ERRORS.ENOTRUNNED);
+					});
 			});
-
 
 			it('should transit fsm into right state (by promises chain)', function () {
 				return fsm.startWith('s1')
-					.then(function () { return fsm.process('e2'); })
+					.then(function () { return fsm.processEvent('e2'); })
 					.then(function () {
 						expect(fsm.currentState()).to.equal('s2');
 					});
@@ -114,11 +123,10 @@ describe('Kristi', function() {
 						done();
 					});
 
-					return fsm.process('e3');
+					return fsm.processEvent('e3');
 				})
 				.catch(done);
 			});
-
 
 			it('should allow to queue event processing, from "in-transition" state', function (done) {
 				var time1, time2;
@@ -141,12 +149,11 @@ describe('Kristi', function() {
 				fsm
 					.startWith('s1')
 					.then(function () {
-						fsm.process('e2');
-						fsm.process('e3');
+						fsm.processEvent('e2');
+						fsm.processEvent('e3');
 					})
 					.catch(done);
 			});
-
 
 			it('should apply queued event, to the new ("result-of-current-transition") state', function (done) {
 				schema = require('./mocks/process-call-from-in-transition');
@@ -155,8 +162,8 @@ describe('Kristi', function() {
 				return fsm
 					.startWith('s1')
 					.then(function () {
-						fsm.process('e2');
-						return fsm.process('e2');
+						fsm.processEvent('e2');
+						return fsm.processEvent('e2');
 					})
 					.catch(function (err) {
 						expect(err.code).to.equal(ERRORS.EWILLNOTPROCESSED);
@@ -191,12 +198,12 @@ describe('Kristi', function() {
 						done();
 					});
 
-					return fsm.process('e3');
+					return fsm.processEvent('e3');
 				})
 				.catch(done);
 			});
 
-			it('should emit `PROCESSING` event on `.process` call', function (done) {
+			it('should emit `PROCESSING` event on `.processEvent` call', function (done) {
 				fsm.startWith('s1').then(function () {
 					fsm.on(EVENTS.PROCESSING, function (envelope) {
 						expect(envelope.state).to.equal('s1');
@@ -204,7 +211,7 @@ describe('Kristi', function() {
 						done();
 					});
 
-					return fsm.process('e3');
+					return fsm.processEvent('e3');
 				})
 				.catch(done);
 			});

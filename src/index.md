@@ -136,7 +136,7 @@ transition = transition.then(() => {
     emit(EVENTS.TRANSITION, envelope);
 
     if (simpleQueue) {
-        let result  = self.process.apply(self, simpleQueue);
+        let result  = self.processEvent.apply(self, simpleQueue);
         simpleQueue = null;
 
         return result;
@@ -162,7 +162,7 @@ function emit(...args) {
 
     _"Automaton.startWith()"
 
-    _"Automaton.process()"
+    _"Automaton.processEvent()"
 
     _"others"
 
@@ -187,22 +187,22 @@ this.startWith = function(newStateId) {
 };
 ```
 
-#### Automaton.process()
+#### Automaton.processEvent()
 
-`Automaton.process()` provides processing of input event, that leads (or not) to state transition.
-State transition will be refused, is `Automaton` instance is not runned at the moment of `.process()`.
+`Automaton.processEvent()` provides processing of input event, that leads (or not) to state transition.
+State transition will be refused, is `Automaton` instance is not runned at the moment of `.processEvent()`.
 
 ```javascript
 /**
  * @param {string} eventId - id of event to process in current state.
  * @returns {Promise}
  */
-this.process = function(eventId, ...args) {
+this.processEvent = function(eventId, ...args) {
     if (!isRunned) {
         let error = new Error('Automaton is not runned');
 
         error.code = ERRORS.ENOTRUNNED;
-        throw error;
+        return Promise.reject(error);
     }
 
     if (inTransition) {
@@ -233,6 +233,14 @@ this.process = function(eventId, ...args) {
  */
 this.currentState = function () {
     return stateId;
+};
+
+
+/**
+ * @returns {string}
+ */
+this.currentTransition = function () {
+    return transition;
 };
 
 
