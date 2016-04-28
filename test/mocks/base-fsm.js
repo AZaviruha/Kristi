@@ -4,8 +4,8 @@ module.exports = {
 			e2 : 's2',
 			e3 : 's3'
 		},
-		enter : function () {},
-		exit  : function () {}
+		coming  : function () {},
+		leaving : function () {}
 	},
 
 	s2: {
@@ -13,8 +13,8 @@ module.exports = {
 			e1 : 's1',
 			e3 : 's3'
 		},
-		enter : function () {},
-		exit  : function () {}
+		coming  : function () {},
+		leaving : function () {}
 	},
 
 	s3: {
@@ -22,7 +22,7 @@ module.exports = {
 			e1 : 's1',
 			e2 : 's2'
 		},
-		enter : function () {},
-		exit  : function () {}
+		coming  : function () {},
+		leaving : function () {}
 	}
 }

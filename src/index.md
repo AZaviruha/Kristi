@@ -55,7 +55,7 @@ let eventBus     = new MicroEvent();
 let isRunned     = false;
 let inTransition = false;
 let simpleQueue  = null;
-let stateId, state, transition;
+let stateId, state, targetStateId, transitionEventId, transition;
 ```
 
 
@@ -73,7 +73,7 @@ function transitState(automaton, newStateId, args=[]) {
 
     _"Start transition (async) process"
 
-    _"Call old state's `exit` and new state's `enter` functions, in order"
+    _"Call old state's `leaving` and new state's `coming` functions, in order"
 
     _"Do post-transition work (save new `stateId`, unlock `inTransition` flag etc)"
 
@@ -86,14 +86,7 @@ function transitState(automaton, newStateId, args=[]) {
 ```javascript
 let newState = newStateId && schema[newStateId];
 
-if (!newState) {
-    let error = new Error('Target state does not exist');
-
-    error.code = ERRORS.ESTATENOTEXISTS;
-    return Promise.reject(error);
-}
-
-
+if (!newState) return Promise.reject(error(ERRORS.ESTATENOTEXISTS));
 if (inTransition) return transition;
 ```
 
@@ -108,18 +101,18 @@ transition   = Promise.resolve(true);
 ```
 
 
-#### Call old state's \`exit\` and new state's \`enter\` functions, in order
+#### Call old state's \`leaving\` and new state's \`coming\` functions, in order
 
 ```javascript
-const exit  = state && state.exit;
-const enter = newState.enter;
+const leaving = state && state.leaving;
+const coming  = newState.coming;
 
-if (typeof exit === 'function') {
-    transition = transition.then(() => exit.call(automaton));
+if (typeof leaving === 'function') {
+    transition = transition.then(() => leaving.call(automaton));
 }
 
-if (typeof enter === 'function') {
-    transition = transition.then(() => enter.apply(automaton, args));
+if (typeof coming === 'function') {
+    transition = transition.then(() => coming.apply(automaton, args));
 }
 ```
 
@@ -129,20 +122,27 @@ if (typeof enter === 'function') {
 ```javascript
 transition = transition.then(() => {
     let envelope = { from: stateId, to: newStateId };
-    stateId      = newStateId;
-    state        = newState
-    inTransition = false;
+
+    stateId       = newStateId;
+    state         = newState
+    targetStateId = transitionEventId = null;
+    inTransition  = false;
 
     emit(EVENTS.TRANSITION, envelope);
 
     if (simpleQueue) {
-        let result  = self.processEvent.apply(self, simpleQueue);
-        simpleQueue = null;
-
-        return result;
-    } else {
-        return true;
+        try {
+            self.processEvent.apply(self, simpleQueue);
+        }
+        catch (e) {
+            emit(EVENTS.ERROR, error(ERRORS.EQUEUEDFAILED))
+        }
+        finally {
+            simpleQueue = null;
+        }
     }
+
+    return true;
 });
 
 return transition;
@@ -175,12 +175,7 @@ function emit(...args) {
  * @returns {Promise}
  */
 this.startWith = function(newStateId) {
-    if (isRunned) {
-        let error = new Error('Automaton already runned');
-
-        error.code = ERRORS.EALREADYRUNNED;
-        throw error;
-    }
+    if (isRunned) throw error(ERRORS.EALREADYRUNNED);
 
     isRunned = true;
     return transitState(self, newStateId);
@@ -198,30 +193,20 @@ State transition will be refused, is `Automaton` instance is not runned at the m
  * @returns {Promise}
  */
 this.processEvent = function(eventId, ...args) {
-    if (!isRunned) {
-        let error = new Error('Automaton is not runned');
-
-        error.code = ERRORS.ENOTRUNNED;
-        return Promise.reject(error);
-    }
+    if (!isRunned) throw error(ERRORS.ENOTRUNNED);
 
     if (inTransition) {
         simpleQueue = [[eventId].concat(args)];
+    } else {
+        let nextStateId = nextState(schema, stateId, eventId);
+
+        if (!nextStateId) throw error(ERRORS.ECANTBEPROCESSED, eventId, stateId);
+
+        emit(EVENTS.PROCESSING, { state: stateId, event: eventId });
+        targetStateId     = nextStateId;
+        transitionEventId = eventId;
+        transitState(self, nextStateId, args);
     }
-
-    let envelope = { state: stateId, event: eventId };
-    emit(EVENTS.PROCESSING, envelope);
-
-    let nextStateInfo = nextState(schema, stateId, eventId);
-
-    if (!nextStateInfo) {
-        let error = new Error(`Input ${eventId} will not be processed in the next state`);
-
-        error.code = ERRORS.EWILLNOTPROCESSED;
-        throw error;
-    }
-
-    return transitState(self, nextState(schema, stateId, eventId), args);
 };
 ```
 
@@ -271,10 +256,12 @@ this.off = function(eventId, fn) {
 
     _"nextState()"
 
+    _"error()"
+
 
 ### nextState()
 
-Pure, calculates of the next `stateId`.
+Pure, calculates the next `stateId`.
 
 ```javascript
 /**
@@ -292,6 +279,22 @@ export function nextState(schema, stateId, eventId) {
 }
 ```
 
+### error()
+
+Pure, creates new error object.
+
+```javascript
+export function error({ code, message }, ...args) {
+    let msg = (typeof message === 'function')
+        ? message.apply(null, args)
+        : message;
+
+    let err = new Error(msg);
+
+    err.code = code;
+    return err;
+}
+```
 
 ## Imports
 
@@ -305,14 +308,36 @@ import MicroEvent from 'microevent';
 ```javascript
 export const EVENTS = {
     TRANSITION : 'transition',
-    PROCESSING : 'processing'
+    PROCESSING : 'processing',
+    ERROR      : 'error'
 };
 
 export const ERRORS = {
-    ENOTRUNNED        : 'enotrunned',
-    EALREADYRUNNED    : 'ealreadyrunned',
-    EWILLNOTPROCESSED : 'ewillnotprocessed',
-    ESTATENOTEXISTS   : 'estatenotexists'
+    ENOTRUNNED: {
+        code    : 'ENOTRUNNED',
+        message : 'Automaton is not runned'
+    },
+
+    EALREADYRUNNED: {
+        code    : 'EALREADYRUNNED',
+        message : 'Automaton already runned'
+    },
+
+    ECANTBEPROCESSED: {
+        code    : 'ECANTBEPROCESSED',
+        message : (eventId, stateId) => `Event "${eventId}" can't be processed in state "${stateId}"`
+    },
+
+    ESTATENOTEXISTS: {
+        code    : 'ESTATENOTEXISTS',
+        message : (stateId) => `Target state "${stateId}" does not exist`
+    },
+
+    EQUEUEDFAILED: {
+        code    : 'EQUEUEDFAILED',
+        message : (eventId, stateId) => `Queued event "${eventId} could not be processed in the target state "${stateId}"`
+    }
+
 };
 ```
 

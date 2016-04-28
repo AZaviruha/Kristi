@@ -4,6 +4,7 @@ require('chai-as-promised');
 var Kristi     = require('../');
 var Automaton  = Kristi.Automaton;
 var nextState  = Kristi.nextState;
+var error      = Kristi.error;
 var EVENTS     = Kristi.EVENTS;
 var ERRORS     = Kristi.ERRORS;
 
@@ -27,6 +28,31 @@ describe('Kristi', function() {
 
 			it('should return `null` if current state is not defined in scheme', function () {
 				expect(nextState(schema, 'unknown', 'e1')).to.equal(null);
+			});
+		});
+
+
+		describe('error()', function () {
+			it('should return Error instance', function () {
+				var errorInfo = { message: 'test', code: -1 };
+				var errorInst = error(errorInfo);
+
+				expect(errorInst).to.be.an.instanceOf(Error);
+				expect(errorInst.code).to.equal(-1);
+				expect(errorInst.message).to.equal(errorInfo.message);
+			});
+
+			it('should build correct error\'s message from message function', function () {
+				var errorInfo = {
+					message: function (x,y) { return 'test'+x+y; },
+					code: -1
+				};
+
+				var errorInst = error(errorInfo, 1, 2);
+
+				expect(errorInst).to.be.an.instanceOf(Error);
+				expect(errorInst.code).to.equal(-1);
+				expect(errorInst.message).to.equal('test12');
 			});
 		});
 	});
@@ -82,7 +108,7 @@ describe('Kristi', function() {
 				function fn() { fsm.startWith('s1'); }
 
 				fsm.startWith('s1');
-				expect(fn).to.throw('Automaton already runned');
+				expect(fn).to.throw(ERRORS.EALREADYRUNNED.message);
 			});
 
 			it('should transit fsm into right state', function () {
@@ -93,27 +119,17 @@ describe('Kristi', function() {
 		});
 
 
-		describe('#process()', function () {
-			it('should return Promise', function () {
+		describe('#processEvent()', function () {
+			it('should return undefined', function () {
 				return fsm.startWith('s1').then(function () {
-					expect(fsm.processEvent('e2').then).to.be.a('function');
+					expect(fsm.processEvent('e2')).to.be.undefined;
 				});
 			});
 
-			it('should return rejected Promise if fsm is not runned', function () {
-				return fsm
-					.processEvent('e2')
-					.catch(function (err) {
-						expect(err.code).to.equal(ERRORS.ENOTRUNNED);
-					});
-			});
+			it('should throw exception if Automaton is not runned', function () {
+				function fn() { fsm.processEvent('s1'); }
 
-			it('should transit fsm into right state (by promises chain)', function () {
-				return fsm.startWith('s1')
-					.then(function () { return fsm.processEvent('e2'); })
-					.then(function () {
-						expect(fsm.currentState()).to.equal('s2');
-					});
+				expect(fn).to.throw(ERRORS.ENOTRUNNED.message);
 			});
 
 			it('should transit fsm into right state (by events)', function (done) {
@@ -146,30 +162,66 @@ describe('Kristi', function() {
 					}
 				});
 
-				fsm
-					.startWith('s1')
-					.then(function () {
-						fsm.processEvent('e2');
-						fsm.processEvent('e3');
-					})
-					.catch(done);
+				fsm.startWith('s1').then(function () {
+					fsm.processEvent('e2');
+					fsm.processEvent('e3');
+				});
 			});
 
-			it('should apply queued event, to the new ("result-of-current-transition") state', function (done) {
+			it('should apply queued event, to the new ("result-of-current-transition") state - error', function (done) {
 				schema = require('./mocks/process-call-from-in-transition');
 				fsm    = new Automaton(schema);
 
-				return fsm
-					.startWith('s1')
-					.then(function () {
-						fsm.processEvent('e2');
-						return fsm.processEvent('e2');
-					})
-					.catch(function (err) {
-						expect(err.code).to.equal(ERRORS.EWILLNOTPROCESSED);
+				// 4. So, if our strategy "last-is-winner" is implemented properly
+				// then we should to get error event.
+				fsm.on(EVENTS.ERROR, function (err) {
+					try {
+						expect(err.code).to.equal(ERRORS.EQUEUEDFAILED.code);
 						expect(fsm.currentState()).to.equal('s2');
 						done();
-					});
+					} catch (e) {
+						done(e);
+					}
+				});
+
+				fsm.startWith('s1').then(function () {
+					// 1. Let's start new transition: (s1, e2) => s2
+					fsm.processEvent('e2');
+
+					// 2. In state `s2` event `e3` is valid
+					fsm.processEvent('e3');
+					fsm.processEvent('e3');
+					fsm.processEvent('e3');
+
+					// 3. But our last request - `e5` is invalid in `s2`
+					fsm.processEvent('e5');
+				});
+			});
+
+			it('should apply queued event, to the new ("result-of-current-transition") state - success', function (done) {
+				schema = require('./mocks/process-call-from-in-transition');
+				fsm    = new Automaton(schema);
+
+				// 4. So, if our strategy "last-is-winner" is implemented properly
+				// then we will get normal transition to state 's3' here.
+				fsm.on(EVENTS.TRANSITION, function (transition) {
+					if (transition.to === 's3') done();
+				});
+
+				fsm.on(EVENTS.ERROR, done);
+
+				fsm.startWith('s1').then(function () {
+					// 1. Let's start new transition: (s1, e2) => s2
+					fsm.processEvent('e2');
+
+					// 2. In state `s2` event `e5` is invalid
+					fsm.processEvent('e5');
+					fsm.processEvent('e5');
+					fsm.processEvent('e5');
+
+					// 3. But our last request - `e3` is valid in `s2`
+					fsm.processEvent('e3');
+				});
 			});
 		});
 

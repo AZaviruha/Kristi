@@ -28,20 +28,20 @@ let fsm = new Automaton({
 			'user-authenticated'           : 'todo-screen-is-shown',
 			'password-recovery-requested'  : 'password-recovery-screen-is-shown',
 		},
-		enter() {
-			let fsm = this; // Automaton instance is set as `this` in `enter` and `exit`;
+		coming() {
+			let fsm = this; // Automaton instance is set as `this` in `coming` and `leaving`;
 
 			// AJAX requests for screen template, etc...
 			return new Promise((resolve) => {
 				$('#btn-recover-passw').click(() => {
-					fsm.process('password-recovery-requested');
+					fsm.processEvent('password-recovery-requested');
 				});
 
 				resolve();
 			});
 		},
 
-		exit() {
+		leaving() {
 			// Some clean-up
 		}
 	},
@@ -65,8 +65,8 @@ let fsm = new Automaton({
 			'user-authenticated'           : 'todo-screen-is-shown',
 			'password-recovery-requested'  : 'password-recovery-screen-is-show',
 		},
-		enter: showLoginScreen,
-		exit:  hideLoginScreen
+		coming:  showLoginScreen,
+		leaving: hideLoginScreen
 	}
 	...
 });
