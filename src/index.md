@@ -15,6 +15,7 @@ Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows 
 - [Helpers](#helpers)
     - [nextState()](#nextstate)
     - [error()](#error)
+- [Constants](#constants)
 
 
 ## Structure
