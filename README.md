@@ -96,7 +96,7 @@ The full API description could be found [here][api-url].
 
 [literate-image]: https://img.shields.io/badge/literate%20programming--brightgreen.svg
 [literate-url]: https://en.wikipedia.org/wiki/Literate_programming
-[npm-image]: http://img.shields.io/badge/npm-v1.2.3-green.svg
+[npm-image]: http://img.shields.io/badge/npm-v1.2.4-green.svg
 [npm-url]: https://www.npmjs.com/package/kristi
 [fsm-url]: https://en.wikipedia.org/wiki/Finite-state_machine
 [automata-url]: https://en.wikipedia.org/wiki/Automata-based_programming
