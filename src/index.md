@@ -217,7 +217,7 @@ this.processEvent = function(eventId, ...args) {
 
 #### Automaton.on()
 
-Provide a way to subscribe to Automaton [events](Events).
+Provide a way to subscribe to Automaton [events](#events).
 
 ```javascript
 /**
@@ -234,7 +234,7 @@ this.on = function(eventId, fn) {
 
 #### Automaton.off()
 
-Provide a way to unsubscribe from Automaton [events](Events).
+Provide a way to unsubscribe from Automaton [events](#events).
 
 ```javascript
 /**
