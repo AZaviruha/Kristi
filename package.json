@@ -1,6 +1,6 @@
 {
   "name": "kristi",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Simple FSM engine",
   "main": "build/Kristi.js",
   "scripts": {
@@ -38,5 +38,8 @@
     "rimraf": "^2.5.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
-  }
+  },
+  "files": [
+    "build/Kristi.js"
+  ]
 }

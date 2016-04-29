@@ -14,6 +14,7 @@ Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows 
     - [Public API definition](#public-api-definition)
 - [Helpers](#helpers)
     - [nextState()](#nextstate)
+    - [error()](#error)
 
 
 ## Structure
@@ -164,7 +165,11 @@ function emit(...args) {
 
     _"Automaton.processEvent()"
 
-    _"others"
+    _"Automaton.on()"
+
+    _"Automaton.off()"
+
+    _"Context Descriptors"
 
 
 #### Automaton.startWith()
@@ -210,7 +215,40 @@ this.processEvent = function(eventId, ...args) {
 };
 ```
 
-#### others
+#### Automaton.on()
+
+Provide a way to subscribe to Automaton [events](Events).
+
+```javascript
+/**
+ * @param {string} eventId - id of event to subscribe
+ * @param {Function} fn - event handler
+ * @returns {Automaton}
+ */
+this.on = function(eventId, fn) {
+    eventBus.bind(eventId, fn);
+    return this;
+};
+```
+
+
+#### Automaton.off()
+
+Provide a way to unsubscribe from Automaton [events](Events).
+
+```javascript
+/**
+ * @param {string} eventId - id of event to unsubscribe
+ * @param {Function} fn - event handler
+ * @returns {Automaton}
+ */
+this.off = function(eventId, fn) {
+    eventBus.unbind(eventId, fn);
+    return this;
+};
+```
+
+#### Context Descriptors
 
 ```javascript
 /**
@@ -226,28 +264,6 @@ this.currentState = function () {
  */
 this.currentTransition = function () {
     return transition;
-};
-
-
-/**
- * @param {string} eventId - id of event to subscribe
- * @param {Function} fn - event handler
- * @returns {Automaton}
- */
-this.on = function(eventId, fn) {
-    eventBus.bind(eventId, fn);
-    return this;
-};
-
-
-/**
- * @param {string} eventId - id of event to unsubscribe
- * @param {Function} fn - event handler
- * @returns {Automaton}
- */
-this.off = function(eventId, fn) {
-    eventBus.unbind(eventId, fn);
-    return this;
 };
 ```
 
@@ -305,13 +321,24 @@ import MicroEvent from 'microevent';
 
 ## Constants
 
+    _"Events"
+
+    _"Errors"
+
+
+### Events
+
 ```javascript
 export const EVENTS = {
     TRANSITION : 'transition',
     PROCESSING : 'processing',
     ERROR      : 'error'
 };
+```
 
+### Errors
+
+```javascript
 export const ERRORS = {
     ENOTRUNNED: {
         code    : 'ENOTRUNNED',
