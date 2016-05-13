@@ -60,7 +60,7 @@ gulp.task('build-commonjs', ['clear'], function () {
 //==================================================================//
 
 gulp.task('watch', ['build-min'], function() {
-	gulp.watch(join(PATH.src, '**/*.md'),   ['build']);
+	gulp.watch(join(PATH.src, '**/*.md'),   ['build-min']);
 });
 
 gulp.task('default', ['build-min']);

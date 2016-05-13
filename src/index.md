@@ -2,7 +2,7 @@
 
 # Kristi
 
-Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows you to describe a program (or part of it) using an [automata-based approach][automata-url].
+Kristi is an [finite state machine][fsm-url] engine for FRP paradigm. It allows you to describe a program as a **set of states** and a **signal** that represents transitions between this states.
 
 <!--+ [index.js](#Structure "save:") -->
 
@@ -10,7 +10,6 @@ Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows 
 
 - [Structure](#structure)
 - [FSM Constructor](#fsm-constructor)
-    - [State-transition procedure](#state-transition-procedure)
     - [Public API definition](#public-api-definition)
 - [Helpers](#helpers)
     - [nextState()](#nextstate)
@@ -52,103 +51,34 @@ export function Automaton(schema) {
 ### Automaton private variables (state)
 
 ```javascript
-let self         = this;
-let eventBus     = new MicroEvent();
-let isRunned     = false;
-let inTransition = false;
-let simpleQueue  = null;
-let stateId, state, targetStateId, transitionEventId, transition;
+let self     = this;
+let eventBus = new MicroEvent();
+let isRunned = false;
+let stateId, state;
 ```
 
 
 ### State-transition procedure
 
 State-transition procedure in stateful and "dirty", because it knows and mutates Automaton's internal variables.
-Operation of state transition is atomic. It's not possible to make a few transition simultaneously (we use a boolean flag `inTransition` to check, if the new process of state transition could be run).
 
 The whole transition procedure can be described by the next algorithm:
 
 ```javascript
-function transitState(automaton, newStateId, args=[]) {
+function transitState(newStateId, eventId, payload) {
+    let newState = newStateId && schema[newStateId];
+    let envelope;
 
-    _"Check, if transition could be performed, and stop if it could not"
+    if (!newState) throw error(ERRORS.ESTATENOTEXISTS);
 
-    _"Start transition (async) process"
-
-    _"Call old state's `leaving` and new state's `coming` functions, in order"
-
-    _"Do post-transition work (save new `stateId`, unlock `inTransition` flag etc)"
-
-}
-```
-
-
-#### Check, if transition could be performed, and stop if it could not
-
-```javascript
-let newState = newStateId && schema[newStateId];
-
-if (!newState) return Promise.reject(error(ERRORS.ESTATENOTEXISTS));
-if (inTransition) return transition;
-```
-
-
-#### Start transition (async) process
-
-From this moment, previous transition deprecates, and we could start new transition.
-
-```javascript
-inTransition = true;
-transition   = Promise.resolve(true);
-```
-
-
-#### Call old state's \`leaving\` and new state's \`coming\` functions, in order
-
-```javascript
-const leaving = state && state.leaving;
-const coming  = newState.coming;
-
-if (typeof leaving === 'function') {
-    transition = transition.then(() => leaving.call(automaton));
-}
-
-if (typeof coming === 'function') {
-    transition = transition.then(() => coming.apply(automaton, args));
-}
-```
-
-
-#### Do post-transition work (save new \`stateId\`, unlock \`inTransition\` flag etc)
-
-```javascript
-transition = transition.then(() => {
-    let envelope = { from: stateId, to: newStateId };
-
-    stateId       = newStateId;
-    state         = newState
-    targetStateId = transitionEventId = null;
-    inTransition  = false;
+    envelope = { from: stateId, to: newStateId, event: eventId, payload };
+    state    = newState;
+    stateId  = newStateId;
 
     emit(EVENTS.TRANSITION, envelope);
-
-    if (simpleQueue) {
-        try {
-            self.processEvent.apply(self, simpleQueue);
-        }
-        catch (e) {
-            emit(EVENTS.ERROR, error(ERRORS.EQUEUEDFAILED))
-        }
-        finally {
-            simpleQueue = null;
-        }
-    }
-
-    return true;
-});
-
-return transition;
+}
 ```
+
 
 ### Event emitting procedure
 
@@ -160,15 +90,14 @@ function emit(...args) {
 }
 ```
 
+
 ### Public API definition
 
     _"Automaton.startWith()"
 
-    _"Automaton.processEvent()"
+    _"Automaton.handle()"
 
-    _"Automaton.on()"
-
-    _"Automaton.off()"
+    _"Automaton.streams()"
 
     _"Context Descriptors"
 
@@ -178,76 +107,63 @@ function emit(...args) {
 ```javascript
 /**
  * @param {string} newStateId - id of start fsm state.
- * @returns {Promise}
+ * @returns {Automaton}
  */
-this.startWith = function(newStateId) {
+this.startWith = function startWith(newStateId, payload) {
     if (isRunned) throw error(ERRORS.EALREADYRUNNED);
 
     isRunned = true;
-    return transitState(self, newStateId);
+    transitState(newStateId, EVENTS.STARTED, payload);
+    return this;
 };
 ```
 
-#### Automaton.processEvent()
 
-`Automaton.processEvent()` provides processing of input event, that leads (or not) to state transition.
-State transition will be refused, is `Automaton` instance is not runned at the moment of `.processEvent()`.
+#### Automaton.handle()
+
+`Automaton.handle()` provides processing of input event, that leads (or not) to state transition.
+State transition will be refused, is `Automaton` instance is not runned at the moment of `.handle()`.
 
 ```javascript
 /**
  * @param {string} eventId - id of event to process in current state.
- * @returns {Promise}
+ * @returns {Automaton}
  */
-this.processEvent = function(eventId, ...args) {
+this.handle = function handle(eventId, payload) {
+    let nextStateId;
+
     if (!isRunned) throw error(ERRORS.ENOTRUNNED);
 
-    if (inTransition) {
-        simpleQueue = [[eventId].concat(args)];
-    } else {
-        let nextStateId = nextState(schema, stateId, eventId);
+    nextStateId = nextState(schema, stateId, eventId);
+    if (!nextStateId) throw error(ERRORS.ENOTRANSITION, eventId, stateId);
 
-        if (!nextStateId) throw error(ERRORS.ECANTBEPROCESSED, eventId, stateId);
-
-        emit(EVENTS.PROCESSING, { state: stateId, event: eventId });
-        targetStateId     = nextStateId;
-        transitionEventId = eventId;
-        transitState(self, nextStateId, args);
-    }
-};
-```
-
-#### Automaton.on()
-
-Provide a way to subscribe to Automaton [events](#events).
-
-```javascript
-/**
- * @param {string} eventId - id of event to subscribe
- * @param {Function} fn - event handler
- * @returns {Automaton}
- */
-this.on = function(eventId, fn) {
-    eventBus.bind(eventId, fn);
+    emit(EVENTS.PROCESSING, { from: stateId, to: nextStateId, event: eventId });
+    transitState(nextStateId, eventId, payload);
     return this;
 };
 ```
 
 
-#### Automaton.off()
-
-Provide a way to unsubscribe from Automaton [events](#events).
+#### Automaton.streams()
 
 ```javascript
 /**
- * @param {string} eventId - id of event to unsubscribe
- * @param {Function} fn - event handler
- * @returns {Automaton}
+ * @param {Object} streamDriver - library-specific stream constructor
+ * @returns {Object}
  */
-this.off = function(eventId, fn) {
-    eventBus.unbind(eventId, fn);
-    return this;
+this.streams = function streams(streamDriver) {
+    let transitions = streamDriver.fromCallback((emitToStream) => {
+        eventBus.on(EVENTS.TRANSITION, emitToStream);
+    });
+
+    let processing = streamDriver.fromCallback((emitToStream) => {
+        eventBus.on(EVENTS.PROCESSING, emitToStream);
+    });
+
+    return { transitions, processing };
 };
 ```
+
 
 #### Context Descriptors
 
@@ -255,17 +171,7 @@ this.off = function(eventId, fn) {
 /**
  * @returns {string}
  */
-this.currentState = function () {
-    return stateId;
-};
-
-
-/**
- * @returns {string}
- */
-this.currentTransition = function () {
-    return transition;
-};
+this.currentState = function () { return stateId; };
 ```
 
 
@@ -331,6 +237,7 @@ import MicroEvent from 'microevent';
 
 ```javascript
 export const EVENTS = {
+    STARTED    : 'started',
     TRANSITION : 'transition',
     PROCESSING : 'processing',
     ERROR      : 'error'
@@ -351,21 +258,15 @@ export const ERRORS = {
         message : 'Automaton already runned'
     },
 
-    ECANTBEPROCESSED: {
-        code    : 'ECANTBEPROCESSED',
-        message : (eventId, stateId) => `Event "${eventId}" can't be processed in state "${stateId}"`
+    ENOTRANSITION: {
+        code    : 'ENOTRANSITION',
+        message : (eventId, stateId) => `Transition for event "${eventId}" is not defined in state "${stateId}"`
     },
 
     ESTATENOTEXISTS: {
         code    : 'ESTATENOTEXISTS',
         message : (stateId) => `Target state "${stateId}" does not exist`
-    },
-
-    EQUEUEDFAILED: {
-        code    : 'EQUEUEDFAILED',
-        message : (eventId, stateId) => `Queued event "${eventId} could not be processed in the target state "${stateId}"`
     }
-
 };
 ```
 

@@ -3,7 +3,7 @@
 
 # Kristi
 
-Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows you to describe a program (or part of it) using an [automata-based approach][automata-url].
+Kristi is an [finite state machine][fsm-url] engine for FRP paradigm. It allows you to describe a program as a **set of states** and a **signal** that represents transitions between this states.
 
 In addition, this is my first experiment with [literate programming](https://en.wikipedia.org/wiki/Literate_programming) (with help of a [literate-programming-lib](https://github.com/jostylr/literate-programming-lib)).
 
@@ -20,70 +20,44 @@ In other case, use `gulp build-min` to get minified UMD-compatible build.
 ### FSM Construction
 
 ```javascript
-import { Automaton, EVENTS } from 'kristi';
+import BaconDriver from 'kristi-bacon';
+import { Automaton } from 'kristi';
 
-let fsm = new Automaton({
-	'login-screen-is-shown': {
-		transitions: {
-			'user-authenticated'           : 'todo-screen-is-shown',
-			'password-recovery-requested'  : 'password-recovery-screen-is-shown',
-		},
-		coming() {
-			let fsm = this; // Automaton instance is set as `this` in `coming` and `leaving`;
+let app = new Automaton({
+    'state-s1': {
+        'event-e2'  : 'state-s2',
+        'event-e3'  : 'state-s3'
+    },
 
-			// AJAX requests for screen template, etc...
-			return new Promise((resolve) => {
-				$('#btn-recover-passw').click(() => {
-					fsm.processEvent('password-recovery-requested');
-				});
+    'state-s2': {
+        'event-e1'  : 'state-s1',
+        'event-e3'  : 'state-s3'
+    }
+})
+.streams(BaconDriver)
+.transitions // End of Automaton instance API. Start of FRP lib-specific API.
+.map((envelope) => {
+	let { from, to, event, payload } = envelope;
 
-				resolve();
-			});
-		},
+	// ... some transformation
 
-		leaving() {
-			// Some clean-up
-		}
-	},
+	return newEnvelope;
+})
+.onValue(({ from, to, event, payload }) => {
+    switch (`${from}:${to}:${event}`) {
 
-	'todo-screen-is-shown' : {
-		...
-	},
+    case 'state-s1:state-s2:event-e1':
+        leavingS1().then(comingS2).then(() => app.handle('event-e3'));
+        break;
 
-	...
+    case 'state-s1:state-s3:event-e3':
+        leavingS1().then(comingS2).then(() => app.handle('event-e1'));
+        break;
+    }
 });
 
-fsm.startWith('login-screen-is-shown');
+app.startWith('state-s1');
 ```
-
-The "best practice" is to move transition functions out of fsm-schema definition:
-
-```javascript
-let fsm = new Automaton({
-	'login-screen-is-shown': {
-		transitions: {
-			'user-authenticated'           : 'todo-screen-is-shown',
-			'password-recovery-requested'  : 'password-recovery-screen-is-show',
-		},
-		coming:  showLoginScreen,
-		leaving: hideLoginScreen
-	}
-	...
-});
-```
-
-### Events
-
-Kristi provides simple `on/off` interface, so you can subscribe to some events from fsm instance.
-
-```javascript
-fsm.on(EVENTS.TRANSITION, ({from, to}) => {...});
-
-fsm.on(EVENTS.PROCESSING, ({state, event}) => {...});
-```
-
-TODO: add full Event API description.
-
 
 ### API
 
