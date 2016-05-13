@@ -77,8 +77,8 @@ describe('Kristi', function() {
 				expect(fsm.startWith).to.be.a('function');
 			});
 
-			it('should return object with `.processEvent` method', function () {
-				expect(fsm.processEvent).to.be.a('function');
+			it('should return object with `.handle` method', function () {
+				expect(fsm.handle).to.be.a('function');
 			});
 
 			it('should return object with `.on` method', function () {
@@ -92,16 +92,12 @@ describe('Kristi', function() {
 			it('should return object with `.currentState` method', function () {
 				expect(fsm.currentState).to.be.a('function');
 			});
-
-			it('should return object with `.currentTransition` method', function () {
-				expect(fsm.currentTransition).to.be.a('function');
-			});
 		});
 
 
 		describe('#startWith()', function () {
-			it('should return Promise', function () {
-				expect(fsm.startWith('s1').then).to.be.a('function');
+			it('should return Automaton instance', function () {
+				expect(fsm.startWith('s1')).to.be.an.instanceOf(Automaton);
 			});
 
 			it('should throw exception if called more than once', function () {
@@ -112,18 +108,16 @@ describe('Kristi', function() {
 			});
 
 			it('should transit fsm into right state', function () {
-				return fsm.startWith('s1').then(function () {
-					expect(fsm.currentState()).to.equal('s1');
-				});
+				fsm.startWith('s1');
+				expect(fsm.currentState()).to.equal('s1');
 			});
 		});
 
 
-		describe('#processEvent()', function () {
-			it('should return undefined', function () {
-				return fsm.startWith('s1').then(function () {
-					expect(fsm.processEvent('e2')).to.be.undefined;
-				});
+		describe('#handle()', function () {
+			it('should return Automaton instance', function () {
+				fsm.startWith('s1')
+				expect(fsm.handle('e2')).to.be.an.instanceOf(Automaton);
 			});
 
 			it('should throw exception if Automaton is not runned', function () {
