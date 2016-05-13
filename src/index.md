@@ -82,8 +82,6 @@ function transitState(newStateId, eventId, payload) {
 
 ### Event emitting procedure
 
-It's not a part of public API, because fsm is not event bus and [should not][unix-way-url].
-
 ```javascript
 function emit(...args) {
     eventBus.trigger.apply(eventBus, args);
@@ -98,6 +96,10 @@ function emit(...args) {
     _"Automaton.handle()"
 
     _"Automaton.streams()"
+
+    _"Automaton.on()"
+
+    _"Automaton.off()"
 
     _"Context Descriptors"
 
@@ -161,6 +163,40 @@ this.streams = function streams(streamDriver) {
     });
 
     return { transitions, processing };
+};
+```
+
+
+#### Automaton.on()
+
+Provide a way to subscribe to Automaton [events](#events).
+
+```javascript
+/**
+ * @param {string} eventId - id of event to subscribe
+ * @param {Function} fn - event handler
+ * @returns {Automaton}
+ */
+this.on = function(eventId, fn) {
+    eventBus.bind(eventId, fn);
+    return this;
+};
+```
+
+
+#### Automaton.off()
+
+Provide a way to unsubscribe from Automaton [events](#events).
+
+```javascript
+/**
+ * @param {string} eventId - id of event to unsubscribe
+ * @param {Function} fn - event handler
+ * @returns {Automaton}
+ */
+this.off = function(eventId, fn) {
+    eventBus.unbind(eventId, fn);
+    return this;
 };
 ```
 

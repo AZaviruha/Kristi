@@ -59,9 +59,24 @@ let app = new Automaton({
 app.startWith('state-s1');
 ```
 
+
 ### API
 
 The full API description could be found [here][api-url].
+
+
+### Events
+
+Kristi provides simple `on/off` interface, so you can subscribe to some events from fsm instance, if you don't need FRP power.
+
+```javascript
+fsm.on(EVENTS.TRANSITION, ({from, to, event, payload}) => {...});
+
+fsm.on(EVENTS.PROCESSING, ({from, to, event, payload}) => {...});
+```
+
+TODO: add full Event API description.
+
 
 ## License
 
