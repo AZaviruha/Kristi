@@ -14,7 +14,7 @@ Kristi is inspired by [Machina.js](https://github.com/ifandelse/machina.js) libr
 ### Import
 
 Users of npm can use `npm install kristi`.
-In other case, use `gulp build-min` to get minified UMD-compatible build.
+In other case, use `gulp build-min` to get minified UMD-compatible version.
 
 
 ### FSM Construction

@@ -232,9 +232,7 @@ Pure, calculates the next `stateId`.
 export function nextState(schema, stateId, eventId) {
     const state = schema[stateId];
 
-    return (state && state.transitions)
-        ? state.transitions[eventId] || null
-        : null;
+    return state ? (state[eventId] || null) : null;
 }
 ```
 
