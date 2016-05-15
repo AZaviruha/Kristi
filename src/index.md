@@ -155,11 +155,11 @@ this.handle = function handle(eventId, payload) {
  */
 this.streams = function streams(Streamable) {
     let transitions = new Streamable((emitToStream) => {
-        eventBus.on(EVENTS.TRANSITION, emitToStream);
+        eventBus.bind(EVENTS.TRANSITION, emitToStream);
     });
 
     let processing = new Streamable((emitToStream) => {
-        eventBus.on(EVENTS.PROCESSING, emitToStream);
+        eventBus.bind(EVENTS.PROCESSING, emitToStream);
     });
 
     return { transitions, processing };
