@@ -42,6 +42,8 @@
   "files": [
     "src/",
     "test/",
-    "build/Kristi.js"
+    "build/Kristi.js",
+    "gulpfile.js",
+    "LICENSE"
   ]
 }
