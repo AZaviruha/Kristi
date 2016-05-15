@@ -153,12 +153,12 @@ this.handle = function handle(eventId, payload) {
  * @param {Object} streamDriver - library-specific stream constructor
  * @returns {Object}
  */
-this.streams = function streams(streamDriver) {
-    let transitions = streamDriver.fromCallback((emitToStream) => {
+this.streams = function streams(Streamable) {
+    let transitions = new Streamable((emitToStream) => {
         eventBus.on(EVENTS.TRANSITION, emitToStream);
     });
 
-    let processing = streamDriver.fromCallback((emitToStream) => {
+    let processing = new Streamable((emitToStream) => {
         eventBus.on(EVENTS.PROCESSING, emitToStream);
     });
 
