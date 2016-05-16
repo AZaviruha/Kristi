@@ -95,7 +95,7 @@ function emit(...args) {
 
     _"Automaton.handle()"
 
-    _"Automaton.streams()"
+    _"Automaton.streamThrough()"
 
     _"Automaton.on()"
 
@@ -146,14 +146,14 @@ this.handle = function handle(eventId, payload) {
 ```
 
 
-#### Automaton.streams()
+#### Automaton.streamThrough()
 
 ```javascript
 /**
  * @param {Object} streamDriver - library-specific stream constructor
  * @returns {Object}
  */
-this.streams = function streams(Streamable) {
+this.streamThrough = function streamThrough(Streamable) {
     let transitions = new Streamable((emitToStream) => {
         eventBus.bind(EVENTS.TRANSITION, emitToStream);
     });
