@@ -35,7 +35,7 @@ Our program consists of several parts:
 Kristi allows us to create a new fsm instance by using an `Automaton` constructor.
 
 ```javascript
-export function Automaton(schema) {
+export function Automaton(schema, config={}) {
 
     _"Automaton private variables (state)"
 
@@ -132,11 +132,13 @@ State transition will be refused, is `Automaton` instance is not runned at the m
  * @returns {Automaton}
  */
 this.handle = function handle(eventId, payload) {
+    // console.log('handle :: ', eventId, payload);
     let nextStateId;
 
     if (!isRunned) throw error(ERRORS.ENOTRUNNED);
 
-    nextStateId = nextState(schema, stateId, eventId);
+    nextStateId = (config.nextState || nextState)(schema, stateId, eventId, payload);
+    // console.log('final nextStateId :: ', nextStateId);
     if (!nextStateId) throw error(ERRORS.ENOTRANSITION, eventId, stateId);
 
     emit(EVENTS.PROCESSING, { from: stateId, to: nextStateId, event: eventId });
@@ -229,10 +231,36 @@ Pure, calculates the next `stateId`.
  * @param {string} eventId - id of event to process in current state
  * @returns {string}
  */
-export function nextState(schema, stateId, eventId) {
-    const state = schema[stateId];
+export function nextState(schema, stateId, eventId, data) {
+    let state       = schema[stateId];
+    let nextStateId = state[eventId];
+    // console.log('nextStateId 1 :: ', nextStateId, data);
 
-    return state ? (state[eventId] || null) : null;
+    if (typeof nextStateId === 'function') {
+        nextStateId = nextStateId(data);
+    }
+    // console.log('schema :: ', schema);
+    // console.log('nextStateId 2 :: ', nextStateId);
+    // console.log('nextState :: ', schema[nextStateId]);
+
+    return nextStateId
+        ? (schema[nextStateId] ? nextStateId : matchRegExpStateId(nextStateId, schema))
+        : null;
+
+    // ---------------------------- //
+
+    function matchRegExpStateId(stateId, schema) {
+        let res = Object
+            .keys(schema)
+            .find((regExpStr) => {
+                // console.log('regExpStr :: ', `^${regExpStr}$`);
+                let re = new RegExp(`^${regExpStr}$`);
+                let res = re.test(stateId);
+                // console.log('res :: ', res);
+                return res;
+            });
+        // console.log('matchRegExpStateId :: res :: ', res);
+    };
 }
 ```
 
