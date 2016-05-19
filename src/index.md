@@ -132,17 +132,21 @@ State transition will be refused, is `Automaton` instance is not runned at the m
  * @returns {Automaton}
  */
 this.handle = function handle(eventId, payload) {
-    // console.log('handle :: ', eventId, payload);
-    let nextStateId;
-
     if (!isRunned) throw error(ERRORS.ENOTRUNNED);
 
-    nextStateId = (config.nextState || nextState)(schema, stateId, eventId, payload);
-    // console.log('final nextStateId :: ', nextStateId);
+    let nextState = config.nextState || nextState;
+    let { nextStateId, nextStateData } = nextState(schema, stateId, eventId, payload);
+
     if (!nextStateId) throw error(ERRORS.ENOTRANSITION, eventId, stateId);
 
-    emit(EVENTS.PROCESSING, { from: stateId, to: nextStateId, event: eventId });
-    transitState(nextStateId, eventId, payload);
+    emit(EVENTS.PROCESSING, {
+        from    : stateId,
+        to      : nextStateId,
+        event   : eventId,
+        paylaod : nextStateData
+    });
+
+    transitState(nextStateId, eventId, nextStateData);
     return this;
 };
 ```
@@ -217,6 +221,8 @@ this.currentState = function () { return stateId; };
 
     _"nextState()"
 
+    _"stateEventValue()"
+
     _"error()"
 
 
@@ -229,22 +235,19 @@ Pure, calculates the next `stateId`.
  * @param {Object} schema - transition schema of fsm instance
  * @param {string} stateId - id of current state
  * @param {string} eventId - id of event to process in current state
- * @returns {string}
+ * @returns {Object}
  */
 export function nextState(schema, stateId, eventId, data) {
-    let state       = schema[stateId];
-    let nextStateId = state[eventId];
-    // console.log('nextStateId 1 :: ', nextStateId, data);
+    let eventValue   = stateEventValue(schema, stateId, eventId, data);
+    let matchStateId = config.eventValueToStateId || eventValueToStateId
+    let nextStateId  = matchStateId(schema, eventValue);
 
-    if (typeof nextStateId === 'function') {
-        nextStateId = nextStateId(data);
-    }
-    // console.log('schema :: ', schema);
-    // console.log('nextStateId 2 :: ', nextStateId);
-    // console.log('nextState :: ', schema[nextStateId]);
+    return { nextStateId, nextStateData: data };
+}
 
-    return nextStateId
-        ? (schema[nextStateId] ? nextStateId : matchRegExpStateId(nextStateId, schema))
+function eventValueToStateId(schema, eventValue) {
+    return eventValue
+        ? (schema[eventValue] ? eventValue : matchRegExpStateId(eventValue, schema))
         : null;
 
     // ---------------------------- //
@@ -253,16 +256,26 @@ export function nextState(schema, stateId, eventId, data) {
         let res = Object
             .keys(schema)
             .find((regExpStr) => {
-                // console.log('regExpStr :: ', `^${regExpStr}$`);
                 let re = new RegExp(`^${regExpStr}$`);
                 let res = re.test(stateId);
-                // console.log('res :: ', res);
                 return res;
             });
-        // console.log('matchRegExpStateId :: res :: ', res);
     };
 }
 ```
+
+
+### stateEventValue()
+
+```javascript
+export function stateEventValue(schema, stateId, eventId, data) {
+    let currentState = schema[stateId];
+    let val          = currentState[eventId];
+
+    return (typeof val === 'function') ? val(data) : val;
+}
+```
+
 
 ### error()
 
