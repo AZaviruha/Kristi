@@ -221,6 +221,8 @@ this.currentState = function () { return stateId; };
 
     _"nextState()"
 
+    _"eventValueToStateId()"
+
     _"stateEventValue()"
 
     _"error()"
@@ -228,7 +230,10 @@ this.currentState = function () { return stateId; };
 
 ### nextState()
 
-Pure, calculates the next `stateId`.
+Pure, calculates the next `stateId` and payload for `TRANSITION` event.
+This function can be overridden with `config.nextState`.
+
+It should return an object with two fields: `nextStateId` and `nextStateData`.
 
 ```javascript
 /**
@@ -244,7 +249,18 @@ export function nextState(schema, stateId, eventId, data) {
 
     return { nextStateId, nextStateData: data };
 }
+```
 
+
+### eventValueToStateId()
+
+Pure, calculates the next `stateId` from `%value%` (see `stateEventValue()`).
+It knows, how to find `stateId` by simple string equivalence, or by RegExp. That is,
+you can define state in automaton schema, as a regexp.
+
+This function can be overridden with `config.eventValueToStateId`.
+
+```javascript
 function eventValueToStateId(schema, eventValue) {
     return eventValue
         ? (schema[eventValue] ? eventValue : matchRegExpStateId(eventValue, schema))
@@ -267,7 +283,15 @@ function eventValueToStateId(schema, eventValue) {
 
 ### stateEventValue()
 
+Pure, returns `%value%` from `{ stateX : { event1: %value% } }` in Automaton definition schema. %value% could be a string or a function. In the last case, it will be called with `data` arguments, and result will be returned as result of the whole `stateEventValue` call.
+
 ```javascript
+/**
+ * @param {Object} schema - transition schema of fsm instance
+ * @param {string} stateId - id of current state
+ * @param {string} eventId - id of event to process in current state
+ * @returns {Object}
+ */
 export function stateEventValue(schema, stateId, eventId, data) {
     let currentState = schema[stateId];
     let val          = currentState[eventId];
