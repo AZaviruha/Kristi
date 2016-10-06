@@ -64,7 +64,7 @@ let ajaxCounterFSM = new Automaton({
                             if (err.message === 'EMAXREACHED') {
                                 this.processEvent('max-reached');
                             } else {
-                                this.processEvent('ready.error-shown', { errorMsg: err.message });
+                                this.processEvent('incremet-rejected', { errorMsg: err.message });
                             }
                         }); 
                 },
