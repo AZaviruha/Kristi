@@ -1,76 +1,96 @@
-[![Literate programming][literate-image]][literate-url]
 [![NPM version][npm-image]][npm-url]
 
 # Kristi
 
 Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows you to describe a program (or part of it) using an [automata-based approach][automata-url].
 
-In addition, this is my first experiment with [literate programming](https://en.wikipedia.org/wiki/Literate_programming) (with help of a [literate-programming-lib](https://github.com/jostylr/literate-programming-lib)).
-
-Kristi is inspired by [Machina.js](https://github.com/ifandelse/machina.js) library.
+Kristi is inspired by [Machina.js](https://github.com/ifandelse/machina.js).
 
 ## Usage
 
 ### Import
 
 Users of npm can use `npm install kristi`.
-In other case, use `gulp build-min` to get minified UMD-compatible build.
+In other case, use `gulp build` to get UMD-compatible build.
 
 
 ### FSM Construction
 
 ```javascript
-import { Automaton, EVENTS } from 'kristi';
+import { Automaton, EVENTS, EMPTY_STATE } from 'kristi';
 
-let fsm = new Automaton({
-	'login-screen-is-shown': {
-		transitions: {
-			'user-authenticated'           : 'todo-screen-is-shown',
-			'password-recovery-requested'  : 'password-recovery-screen-is-shown',
-		},
-		coming() {
-			let fsm = this; // Automaton instance is set as `this` in `coming` and `leaving`;
+let ajaxCounterFSM = new Automaton({
+    initialize() { return Promise(); },
 
-			// AJAX requests for screen template, etc...
-			return new Promise((resolve) => {
-				$('#btn-recover-passw').click(() => {
-					fsm.processEvent('password-recovery-requested');
-				});
+    initialState: 'ready', 
 
-				resolve();
-			});
-		},
+    states: {
+        'ready': {
+            actions: {
+                coming(transition, payload) { enableButton(); }
+            },
 
-		leaving() {
-			// Some clean-up
-		}
-	},
+            triggers: {
+                'incremet-requested' : 'increment-processing'
+            },
 
-	'todo-screen-is-shown' : {
-		...
-	},
+            child: {
+                initialState: 'idle',
 
-	...
+                states: {
+                    'idle': EMPTY_STATE,
+
+                    'error-shown': {
+                        actions: {
+                            coming(transition, { errorMsg }) { showError(errorMsg); },
+                            leaving(transition) { clearError(); }
+                        },
+
+                        triggers: {
+                            'error-processed': 'idle'
+                        }
+                    }
+                }
+            }
+        },
+
+        'increment-processing': {
+            actions: {
+                coming(transition, payload) { 
+                    return api
+                        .increment()
+                        .then(() => this.processEvent('increment-processed'))
+                        .catch((err) => {
+                            if (err.message === 'EMAXREACHED') {
+                                this.processEvent('max-reached');
+                            } else {
+                                this.processEvent('ready.error-shown', { errorMsg: err.message });
+                            }
+                        }); 
+                },
+
+                leaving(transition) { return Promise(); }
+            },
+
+            triggers: {
+                'incremet-processed' : 'ready',
+                'incremet-rejected'  : (data) => ({ stateId: 'ready.error-shown', data }),
+                'max-reached'        : 'disabled'
+            },
+
+        },
+
+        'disabled': {
+            actions: {
+                coming(transition, payload) { disableButton(); },
+            },
+        }
+    }
 });
 
-fsm.startWith('login-screen-is-shown');
+fsm.run()
 ```
 
-The "best practice" is to move transition functions out of fsm-schema definition:
-
-```javascript
-let fsm = new Automaton({
-	'login-screen-is-shown': {
-		transitions: {
-			'user-authenticated'           : 'todo-screen-is-shown',
-			'password-recovery-requested'  : 'password-recovery-screen-is-show',
-		},
-		coming:  showLoginScreen,
-		leaving: hideLoginScreen
-	}
-	...
-});
-```
 
 ### Events
 
@@ -87,17 +107,14 @@ TODO: add full Event API description.
 
 ### API
 
-The full API description could be found [here][api-url].
+TODO 
 
 ## License
 
 [MIT-LICENSE](https://github.com/AZaviruha/Kristi/blob/master/LICENSE)
 
 
-[literate-image]: https://img.shields.io/badge/literate%20programming--brightgreen.svg
-[literate-url]: https://en.wikipedia.org/wiki/Literate_programming
-[npm-image]: http://img.shields.io/badge/npm-v1.2.4-green.svg
+[npm-image]: http://img.shields.io/badge/npm-v2.0.0-green.svg
 [npm-url]: https://www.npmjs.com/package/kristi
 [fsm-url]: https://en.wikipedia.org/wiki/Finite-state_machine
 [automata-url]: https://en.wikipedia.org/wiki/Automata-based_programming
-[api-url]: https://github.com/AZaviruha/Kristi/blob/master/src/index.md#public-api-definition
