@@ -17,19 +17,19 @@ let fsm = Automaton({
             },
 
             triggers: {
-                'incremet-requested' : 'increment-processing'
+                'increment-requested' : 'increment-processing'
             },
 
             child: {
                 initialState: 'idle',
 
                 states: {
-                    'idle': {},
+                    'idle': EMPTY_STATE,
 
-                    'error': {
+                    'error-shown': {
                         actions: {
-                            coming(transition, payload) { showErrorText(); },
-                            leaving(transition) { clearErrorText(); }
+                            coming(transition, { errorMsg }) { showError(errorMsg); },
+                            leaving(transition) { clearError(); }
                         },
 
                         triggers: {
@@ -50,7 +50,7 @@ let fsm = Automaton({
                             if (err.message === 'EMAXREACHED') {
                                 this.processEvent('max-reached');
                             } else {
-                                this.processEvent('ready.error', { errorText: err.message });
+                                this.processEvent('increment-rejected', { errorMsg: err.message });
                             }
                         }); 
                 },
@@ -59,8 +59,8 @@ let fsm = Automaton({
             },
 
             triggers: {
-                'incremet-processed' : 'ready',
-                'incremet-rejected'  : 'ready.error',
+                'increment-processed' : 'ready', // equals to 'ready.idle'
+                'increment-rejected'  : (data) => ({ stateId: 'ready.error-shown', data }),
                 'max-reached'        : 'disabled'
             },
 

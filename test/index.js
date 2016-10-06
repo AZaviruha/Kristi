@@ -1,15 +1,19 @@
-const expect = require('chai').expect;
-require('chai-as-promised');
+const chai           = require('chai')
+const expect         = chai.expect;
+const chaiAsPromised = require("chai-as-promised");
+
+chai.use(chaiAsPromised);
 
 const Kristi = require('../');
-const { Automaton, EVENTS, ERRORS, error, statePath }  = Kristi;
+const { Automaton, EVENTS, ERRORS, error } = Kristi;
+const { statePath, joinPromiseFns } = Kristi;
 
 
 describe('Kristi', function() {
 	this.timeout(3000);
 
 	describe('Helpers', function () {
-		describe('error()', function () {
+		describe('error({ code, message }, ...args)', function () {
 			it('should return Error instance', function () {
 				let errorInfo = { message: 'test', code: 42 };
 				let errorInst = error(errorInfo);
@@ -35,7 +39,7 @@ describe('Kristi', function() {
 		});
 
 
-		describe('statePath()', function () {
+		describe('statePath(fsmSchema, statePathFragment, separator)', function () {
 			let schema;
 
 			beforeEach(() => {
@@ -59,6 +63,16 @@ describe('Kristi', function() {
 				expect(statePath(schema, 'C')).to.be.null;
 				expect(statePath(schema, 'A.A-3')).to.be.null;
 				expect(statePath(schema, 'A.A-2.A-2-3')).to.be.null;
+			});
+		});
+
+		describe('joinPromiseFns(fs)', function () {
+			it('should join `fs` in ordered chain of promises', function () {
+				const fn1 = () => [1];
+				const fn2 = (xs) => xs.concat([2]);
+				const fn3 = (xs) => xs.concat([3]);
+
+				return expect(joinPromiseFns([fn1, fn2, fn3])).to.eventually.eql([1,2,3]);
 			});
 		});
 	});

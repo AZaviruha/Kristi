@@ -35,7 +35,7 @@ export function Automaton(schema) {
             : Promise.resolve();
 
         let nextStatePath   = statePath(fsmSchema, initialState);
-        let comingNextState = treeToStack(fsmSchema, nextStatePath);
+        let comingNextState = treeToStack(fsmSchema, nextStatePath, 'coming');
 
         return runned = initializing.then(() => comingNextState);
     }
@@ -44,13 +44,20 @@ export function Automaton(schema) {
 }
 
 
+/**
+ * @param {Object} fsmSchema
+ * @param {string} currentStateId
+ * @param {string} eventId
+ * @returns {string}
+ */
 function doTransition(fsmSchema, currentStateId, eventId) {
     let currentStatePath   = statePath(fsmSchema, currentStateId);
-    let levingCurrentState = treeToStack(fsmSchema, currentStatePath).reverse();
+    let levingCurrentState = joinPromiseFns(treeToStack(fsmSchema, currentStatePath, 'leaving')
+                                .reverse());
 
     let nextStateId        = nextRootStateId(fsmSchema, currentStatePath, eventId);
     let nextStatePath      = statePath(fsmSchema, nextStateId);
-    let comingNextState    = treeToStack(fsmSchema, nextStatePath);
+    let comingNextState    = joinPromiseFns(treeToStack(fsmSchema, nextStatePath, 'coming'));
 
     return leavingCurrentState.then(() => comingNextState);
 }
@@ -94,5 +101,14 @@ export function nextRootStateId(fsmSchema, currentStatePath, eventId) {
 }
 
 
-export function treeToStack(fsmSchema, statePath) {
-};
+export function treeToStack(fsmSchema, statePath, propName) {
+}
+
+
+/**
+ * @param {Function[]} fs
+ * @returns {Promise}
+ */
+export function joinPromiseFns(fs=[]) {
+    return fs.reduce((acc, f) => acc.then((...args) => f.apply(null, args)), Promise.resolve());
+}
