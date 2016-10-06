@@ -31,7 +31,7 @@ let ajaxCounterFSM = new Automaton({
             },
 
             triggers: {
-                'incremet-requested' : 'increment-processing'
+                'increment-requested' : 'increment-processing'
             },
 
             child: {
@@ -64,7 +64,7 @@ let ajaxCounterFSM = new Automaton({
                             if (err.message === 'EMAXREACHED') {
                                 this.processEvent('max-reached');
                             } else {
-                                this.processEvent('incremet-rejected', { errorMsg: err.message });
+                                this.processEvent('increment-rejected', { errorMsg: err.message });
                             }
                         }); 
                 },
@@ -73,8 +73,8 @@ let ajaxCounterFSM = new Automaton({
             },
 
             triggers: {
-                'incremet-processed' : 'ready',
-                'incremet-rejected'  : (data) => ({ stateId: 'ready.error-shown', data }),
+                'increment-processed' : 'ready',
+                'increment-rejected'  : (data) => ({ stateId: 'ready.error-shown', data }),
                 'max-reached'        : 'disabled'
             },
 
