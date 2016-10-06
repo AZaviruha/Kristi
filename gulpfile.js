@@ -7,7 +7,7 @@ var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
 var uglify     = require('gulp-uglify');
 var rename     = require('gulp-rename');
-var literate   = require('gulp-literate2');
+// var literate   = require('gulp-literate2');
 
 var PATH = {
 	src  : 'src/',
@@ -20,8 +20,8 @@ gulp.task('clear', function (next) {
 });
 
 
-gulp.task('build-min', ['build-commonjs'], function () {
-	var src = join(PATH.dest, 'Kristi.js');
+gulp.task('build', function () {
+	var src = join(PATH.src, 'index.js');
 
 	return browserify(src, {
 			debug: true,
@@ -36,31 +36,17 @@ gulp.task('build-min', ['build-commonjs'], function () {
 			console.error(err);
 			this.emit('end');
 		})
-		.pipe(source('Kristi.min.js'))
+		.pipe(source('Kristi.js'))
 		.pipe(buffer())
-		.pipe(uglify())
+		// .pipe(uglify())
 		.pipe(gulp.dest(join(PATH.dest)));
-});
-
-
-gulp.task('build-commonjs', ['clear'], function () {
-	var src = join(PATH.src, 'index.md');
-
-	return gulp.src(src)
-		.pipe(literate())
-		.pipe(babel({
-			presets: ['es2015', 'stage-0'],
-			plugins: ['transform-es2015-modules-commonjs']
-		}))
-		.pipe(rename('Kristi.js'))
-		.pipe(gulp.dest(PATH.dest));
 });
 
 
 //==================================================================//
 
-gulp.task('watch', ['build-min'], function() {
-	gulp.watch(join(PATH.src, '**/*.md'),   ['build']);
+gulp.task('watch', ['build'], function() {
+	gulp.watch(join(PATH.src, '**/*.js'),   ['build']);
 });
 
-gulp.task('default', ['build-min']);
+gulp.task('default', ['build']);
