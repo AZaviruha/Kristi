@@ -73,7 +73,7 @@ let ajaxCounterFSM = new Automaton({
             },
 
             triggers: {
-                'increment-processed' : 'ready',
+                'increment-processed' : 'ready', // equals to 'ready.idle'
                 'increment-rejected'  : (data) => ({ stateId: 'ready.error-shown', data }),
                 'max-reached'        : 'disabled'
             },
