@@ -10,7 +10,7 @@ export const EVENTS = {
 };
 
 export const EMPTY_STATE        = {};
-export const UNRESPONSIVE_STATE = '__unresponsive__'
+export const UNRESPONSIVE_STATE = '__unresponsive__';
 
 
 /**
@@ -18,11 +18,14 @@ export const UNRESPONSIVE_STATE = '__unresponsive__'
  * @returns {Function}
  */
 export function Automaton(schema) {
+    let runned;
 
     /**
-     * 
+     * @returns {Promise}
      */
     this.run = function run() {
+        if (runned) return runned;
+
         let initialState = schema.initialState;
 
         if (!initialState) throw error(ERROR.ENOINITIALSTATE);
@@ -34,7 +37,7 @@ export function Automaton(schema) {
         let nextStatePath   = statePath(fsmSchema, initialState);
         let comingNextState = treeToStack(fsmSchema, nextStatePath);
 
-        return initializing.then(() => comingNextState);
+        return runned = initializing.then(() => comingNextState);
     }
 
     return this;
@@ -43,17 +46,13 @@ export function Automaton(schema) {
 
 function doTransition(fsmSchema, currentStateId, eventId) {
     let currentStatePath   = statePath(fsmSchema, currentStateId);
+    let levingCurrentState = treeToStack(fsmSchema, currentStatePath).reverse();
+
     let nextStateId        = nextRootStateId(fsmSchema, currentStatePath, eventId);
     let nextStatePath      = statePath(fsmSchema, nextStateId);
-    let levingCurrentState = treeToStack(fsmSchema, currentStatePath).reverse();
     let comingNextState    = treeToStack(fsmSchema, nextStatePath);
 
-    return executeTransitionPlan(leavingCurrentState, comingNextState);
-}
-
-
-export function executeTransitionPlan(leaving, coming) {
-    return coming.then(() => leaving);
+    return leavingCurrentState.then(() => comingNextState);
 }
 
 
@@ -74,9 +73,11 @@ export function statePath(fsmSchema, statePathFragment, separator='.') {
 
         if (currentState) {
             result.push(currentToken);
-
             currentNode = currentState.child;
   
+            /**
+             * Use default path fragment, if tokens are over.
+             */
             if (!tokens.length && currentNode && currentNode.initialState) {
                 tokens.push(currentNode.initialState)
             }
@@ -91,3 +92,7 @@ export function statePath(fsmSchema, statePathFragment, separator='.') {
 
 export function nextRootStateId(fsmSchema, currentStatePath, eventId) {
 }
+
+
+export function treeToStack(fsmSchema, statePath) {
+};
