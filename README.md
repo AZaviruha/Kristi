@@ -3,6 +3,7 @@
 # Kristi
 
 Kristi is an **asynchronous** [finite state machine][fsm-url] engine. It allows you to describe a program (or part of it) using an [automata-based approach][automata-url].
+
 Kristi is inspired by [UML state machine](https://en.wikipedia.org/wiki/UML_state_machine) and [Machina.js](https://github.com/ifandelse/machina.js).
 
 ## Usage
